@@ -38,25 +38,34 @@
     - "{{ zpool_prometheus_root_dir }}"
     - "{{ zpool_prometheus_config_dir }}"
 
-- name: Copy make file
+- name: Copy CMakeLists file
   template:
-    src: CMakeLists.txt.j2
+    src: CMakeLists.txt
     dest: "{{ zpool_prometheus_root_dir }}/CMakeLists.txt"
     group: "{{ zpool_prometheus_group }}"
     mode: 0755
-  become: true
+  register: CMakeLists
 
-- name: Download script
+- name: Download zpool_prometheus script
   get_url:
     url: "{{ zpool_prometheus_url }}"
     dest: "{{ zpool_prometheus_root_dir }}/zpool_prometheus.c"
+  register: zpool_prometheus
 
-- name: Build the default target
+- name: Build the Make File
+  command: "{{ item }} {{ zpool_prometheus_root_dir }}/CMakeLists.txt"
+  with_items:
+    - cmake
+  when: 
+    - CMakeLists.changed or zpool_prometheus.changed
+  register: cmake
+
+- name: Build the application
   make:
     chdir: "{{ zpool_prometheus_root_dir }}"
     target: install
-    file: "{{ zpool_prometheus_root_dir }}/CMakeLists.txt"
-  become: yes
+  when: 
+    - cmake.changed
 
 - name: Ensure cron is configured for zpool_prometheus
   cron:
@@ -64,4 +73,3 @@
     minute: "*/1"
     job: "{{ zpool_prometheus_root_dir }}/zpool_prometheus > {{ node_exporter_path }}/zpool_prometheus_metrics.prom"
     state: present 
-  become: True
