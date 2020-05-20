@@ -1,0 +1,9 @@
+---
+zpool_prometheus_web_listen_address: "0.0.0.0:9888"
+
+zpool_prometheus_group: "zpool-exp"
+zpool_prometheus_user: "{{ zpool_prometheus_group }}"
+zpool_prometheus_root_dir: /usr/local
+zpool_prometheus_config_dir: "{{ zpool_prometheus_root_dir }}/config"
+zpool_prometheus_url: "https://raw.githubusercontent.com/richardelling/zpool_prometheus/master/zpool_prometheus.c"
+node_exporter_path: /var/lib/node_exporter

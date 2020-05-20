@@ -1,0 +1,67 @@
+---
+- name: Install dependencies
+  package:
+    name: "{{ item }}"
+    state: present
+  register: _install_dep_packages
+  until: _install_dep_packages is success
+  retries: 5
+  delay: 2
+  with_items: "{{ zpool_prometheus_dependencies }}"
+
+- name: Create the zpool_prometheus group
+  group:
+    name: "{{ zpool_prometheus_group }}"
+    state: present
+    system: true
+  when: zpool_prometheus_group != "root"
+
+- name: Create the zpool_prometheus user
+  user:
+    name: "{{ zpool_prometheus_user }}"
+    groups: "{{ zpool_prometheus_group }}"
+    append: true
+    shell: /usr/sbin/nologin
+    system: true
+    createhome: false
+    home: /
+  when: zpool_prometheus_user != "root"
+
+- name: Create zpool_prometheus directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ zpool_prometheus_user }}"
+    group: "{{ zpool_prometheus_group }}"
+    mode: 0755
+  with_items:
+    - "{{ zpool_prometheus_root_dir }}"
+    - "{{ zpool_prometheus_config_dir }}"
+
+- name: Copy make file
+  template:
+    src: CMakeLists.txt.j2
+    dest: "{{ zpool_prometheus_root_dir }}/CMakeLists.txt"
+    group: "{{ zpool_prometheus_group }}"
+    mode: 0755
+  become: true
+
+- name: Download script
+  get_url:
+    url: "{{ zpool_prometheus_url }}"
+    dest: "{{ zpool_prometheus_root_dir }}/zpool_prometheus.c"
+
+- name: Build the default target
+  make:
+    chdir: "{{ zpool_prometheus_root_dir }}"
+    target: install
+    file: "{{ zpool_prometheus_root_dir }}/CMakeLists.txt"
+  become: yes
+
+- name: Ensure cron is configured for zpool_prometheus
+  cron:
+    name: zpool_prometheus Info Collection for Prometheus Node Exporter
+    minute: "*/1"
+    job: "{{ zpool_prometheus_root_dir }}/zpool_prometheus > {{ node_exporter_path }}/zpool_prometheus_metrics.prom"
+    state: present 
+  become: True

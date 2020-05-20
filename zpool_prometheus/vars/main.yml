@@ -1,0 +1,4 @@
+---
+zpool_prometheus_dependencies: 
+  - build-essential
+  - libzfslinux-dev
