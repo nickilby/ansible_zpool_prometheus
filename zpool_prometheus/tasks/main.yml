@@ -1,75 +1,12 @@
 ---
-- name: Install dependencies
-  package:
-    name: "{{ item }}"
-    state: present
-  register: _install_dep_packages
-  until: _install_dep_packages is success
-  retries: 5
-  delay: 2
-  with_items: "{{ zpool_prometheus_dependencies }}"
+- import_tasks: preflight.yml
 
-- name: Create the zpool_prometheus group
-  group:
-    name: "{{ zpool_prometheus_group }}"
-    state: present
-    system: true
-  when: zpool_prometheus_group != "root"
+- import_tasks: build.yml
 
-- name: Create the zpool_prometheus user
-  user:
-    name: "{{ zpool_prometheus_user }}"
-    groups: "{{ zpool_prometheus_group }}"
-    append: true
-    shell: /usr/sbin/nologin
-    system: true
-    createhome: false
-    home: /
-  when: zpool_prometheus_user != "root"
+### Only use one method to expose metrics, exporter.yml or cron.yml
 
-- name: Create zpool_prometheus directories
-  file:
-    path: "{{ item }}"
-    state: directory
-    owner: "{{ zpool_prometheus_user }}"
-    group: "{{ zpool_prometheus_group }}"
-    mode: 0755
-  with_items:
-    - "{{ zpool_prometheus_root_dir }}"
-    - "{{ zpool_prometheus_config_dir }}"
+### Comment in if going to use the exporter to expose metrics
+- import_tasks: exporter.yml
 
-- name: Copy CMakeLists file
-  template:
-    src: CMakeLists.txt
-    dest: "{{ zpool_prometheus_root_dir }}/CMakeLists.txt"
-    group: "{{ zpool_prometheus_group }}"
-    mode: 0755
-  register: CMakeLists
-
-- name: Download zpool_prometheus script
-  get_url:
-    url: "{{ zpool_prometheus_url }}"
-    dest: "{{ zpool_prometheus_root_dir }}/zpool_prometheus.c"
-  register: zpool_prometheus
-
-- name: Build the Make File
-  command: "{{ item }} {{ zpool_prometheus_root_dir }}/CMakeLists.txt"
-  with_items:
-    - cmake
-  when: 
-    - CMakeLists.changed or zpool_prometheus.changed
-  register: cmake
-
-- name: Build the application
-  make:
-    chdir: "{{ zpool_prometheus_root_dir }}"
-    target: install
-  when: 
-    - cmake.changed
-
-- name: Ensure cron is configured for zpool_prometheus
-  cron:
-    name: zpool_prometheus Info Collection for Prometheus Node Exporter
-    minute: "*/1"
-    job: "{{ zpool_prometheus_root_dir }}/zpool_prometheus > {{ node_exporter_path }}/zpool_prometheus_metrics.prom"
-    state: present 
+### Comment in if going to use the node_exporter text collecter to collect metrics
+# - import_tasks: cron.yml

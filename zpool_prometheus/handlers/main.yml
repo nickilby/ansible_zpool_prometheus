@@ -1,0 +1,7 @@
+---
+- name: restart zpool_prometheus_service
+  become: true
+  systemd:
+    daemon_reload: true
+    name: zpool_prometheus_service
+    state: restarted

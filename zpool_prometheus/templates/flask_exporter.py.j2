@@ -1,0 +1,21 @@
+#! /usr/bin/python
+from subprocess import check_output
+from flask import Flask, abort
+app = Flask(__name__)
+
+
+@app.route("/metrics")
+def get_metrics():
+    """
+    run zpool_prometheus and, if successful, return the results
+    :return:
+    """
+    res = ''
+    try:
+        res = check_output(['zpool_prometheus'])
+    except Exception:
+        abort(500)
+    return res
+
+if __name__ == '__main__':
+    app.run(host = '0.0.0.0', port={{ zpool_prometheus_port }})

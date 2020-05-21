@@ -1,0 +1,29 @@
+---
+- name: Copy CMakeLists file
+  template:
+    src: CMakeLists.txt
+    dest: "{{ zpool_prometheus_root_dir }}/CMakeLists.txt"
+    group: "{{ zpool_prometheus_group }}"
+    mode: 0755
+  register: CMakeLists
+
+- name: Download zpool_prometheus script
+  get_url:
+    url: "{{ zpool_prometheus_url }}"
+    dest: "{{ zpool_prometheus_root_dir }}/zpool_prometheus.c"
+  register: zpool_prometheus
+
+- name: Build the Make File
+  command: "{{ item }} {{ zpool_prometheus_root_dir }}/CMakeLists.txt"
+  with_items:
+    - cmake
+  when: 
+    - CMakeLists.changed or zpool_prometheus.changed
+  register: cmake
+
+- name: Build the application
+  make:
+    chdir: "{{ zpool_prometheus_root_dir }}"
+    target: install
+  when: 
+    - cmake.changed

@@ -1,0 +1,7 @@
+---
+- name: Ensure cron is configured for zpool_prometheus
+  cron:
+    name: zpool_prometheus Info Collection for Prometheus Node Exporter
+    minute: "*/1"
+    job: "{{ zpool_prometheus_root_dir }}/zpool_prometheus > {{ node_exporter_path }}/zpool_prometheus_metrics.prom"
+    state: present 

@@ -1,0 +1,21 @@
+---
+- name: Install flask with Pip
+  pip:
+    name: flask
+
+- name: Copy flask_exporter file
+  template:
+    src: flask_exporter.py.j2
+    dest: "{{ zpool_prometheus_root_dir }}/flask_exporter.py"
+    group: "{{ zpool_prometheus_group }}"
+    mode: 0755
+  register: flask
+
+- name: Copy the zpool_prometheus_service systemd service file
+  template:
+    src: zpool_prometheus_service.j2
+    dest: /etc/systemd/system/zpool_prometheus_service.service
+    owner: root
+    group: root
+    mode: 0644
+  notify: restart zpool_prometheus_service

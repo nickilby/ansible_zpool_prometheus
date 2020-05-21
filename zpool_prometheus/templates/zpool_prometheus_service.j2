@@ -1,0 +1,15 @@
+[Unit]
+Description=Zpool_Prometheus Exporter
+After=network.target
+
+[Service]
+Type=simple
+User={{ zpool_prometheus_user }}
+Group={{ zpool_prometheus_group }}
+ExecStart={{ zpool_prometheus_root_dir }}/flask_exporter.py
+
+SyslogIdentifier=zpool_prometheus_exporter
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
