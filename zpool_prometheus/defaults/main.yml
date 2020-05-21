@@ -1,5 +1,5 @@
 ---
-zpool_prometheus_port: "9182"
+zpool_prometheus_port: "9188"
 zpool_prometheus_group: "zpool-exp"
 zpool_prometheus_user: "{{ zpool_prometheus_group }}"
 zpool_prometheus_root_dir: /usr/local
